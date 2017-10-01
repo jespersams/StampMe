@@ -1,35 +1,34 @@
 var circles;
-var img;
-var baseStack = [];
+var still;
 var baseColorVectors = [];
 var baseIDs = [];
 var stampIDs = [];
 var stampStack = [];
 var stampColorVectors = [];
-var newStack = [];
+var sampleArrayLength;
 var capture;
 var video;
 var photoSnapped;
-var still;
+var mode;
 
 
 function preload() {
-    loadJSON("./stampArray2.json", stampLoader);
-    img = loadImage("assets/rainbow.jpg");
-    still = img;
+    loadJSON("./stampArray.json", stampLoader);
+    sampleArrayLength = 5;
+    mode = "Stamps";
 }
 
 
 function stampLoader(element) {
     for (var i = 0; i < element.length; i++) {
-        baseStack.push(loadImage("stamps/" + element[i].id + ".jpg"));
+        stampStack.push(loadImage("stamps/" + element[i].id + ".jpg"));
         baseColorVectors.push(element[i].rgb);
         baseIDs.push(i);
     }
-    stampStack = baseStack;
     stampColorVectors = JSON.parse(JSON.stringify(baseColorVectors));
     stampIDs = JSON.parse(JSON.stringify(baseIDs));
     console.log(stampColorVectors[0]);
+
 }
 
 
@@ -42,21 +41,21 @@ function setup() {
     background(0);
     var density = displayDensity();
     pixelDensity(1);
-    img.loadPixels();
+    still.loadPixels();
     circles = [];
     lastFrame = false;
 
-    console.log(img.width);
-    console.log(img.height);
-    console.log("pixels", img.pixels.length);
+    console.log(still.width);
+    console.log(still.height);
+    console.log("pixels", still.pixels.length);
     console.log(density);
 
     capture = createCapture(VIDEO);
-    capture.size(640, 480);
+    capture.size(320, 240);
     capture.hide();
 
     video = createCapture(VIDEO);
-    video.size(640, 480);
+    video.size(320, 240);
     video.hide();
 }
 
@@ -64,7 +63,7 @@ function draw() {
 
     if (photoSnapped) {
 
-        if (circles.length < 100) {
+        if (!(attempts > 100 || stampColorVectors.length < sampleArrayLength + 1)) {
             push();
             translate(width / 2, height / 2);
             scale(-1, 1);
@@ -75,7 +74,7 @@ function draw() {
         }
 
 
-        var total = 20;
+        var total = 30;
         var count = 0;
         var attempts = 0;
 
@@ -86,7 +85,7 @@ function draw() {
                 count++;
             }
             attempts++;
-            if (attempts > 1000 || stampColorVectors.length < 2) {
+            if (attempts > 100 || stampColorVectors.length < sampleArrayLength + 1) {
                 break;
             }
         }
@@ -125,7 +124,12 @@ function draw() {
         image(video, -width / 2, -height / 2, width, height);
         pop();
     }
-
+    textSize(20);
+    strokeWeight(5);
+    stroke(0);
+    fill(255);
+    text("Variance: " + sampleArrayLength + ", Unique: " + keyIsDown(67) + ", Mode: " + mode, 30, height - 30);
+    text("Made by: Ali Tabatabai & Jesper Sam Sørensen, 2017", width - 510, height - 30);
 }
 
 function newCircle() {
@@ -168,5 +172,22 @@ function keyPressed() {
             circles = [];
         }
 
+    }
+
+    if (keyCode === 90) {
+        if (sampleArrayLength > 1) {
+            sampleArrayLength--;
+        }
+    }
+    if (keyCode === 88) {
+        if (sampleArrayLength < 10) {
+            sampleArrayLength++;
+        }
+    }
+
+    if (keyCode === 86) {
+        if (mode === "Stamps") {
+            mode = "Circles";
+        } else if (mode === "Circles") { mode = "None"; } else if (mode === "None") { mode = "Stamps"; }
     }
 }
