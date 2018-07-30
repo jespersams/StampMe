@@ -1,32 +1,42 @@
 var circles;
 var still;
 var baseColorVectors = [];
-var baseIDs = [];
-var stampIDs = [];
+var baseArray = [];
+var stampArray = [];
 var stampStack = [];
 var stampColorVectors = [];
 var sampleArrayLength;
-var capture;
 var video;
+var capture;
 var photoSnapped;
 var mode;
+var uniqueStamps;
+var stampSize;
+var stampSpeed;
+var stampVariance;
+var webcamWidth;
+var webcamHeight;
 
 
 function preload() {
-    loadJSON("./stampArray.json", stampLoader);
+    loadJSON("./stampPrimaries.json", stampLoader);
     sampleArrayLength = 5;
+    uniqueStamps = 5;
+    stampSize = 10;
     mode = "Stamps";
+    stampSpeed = 10;
+    stampVariance = 5;
 }
 
 
 function stampLoader(element) {
     for (var i = 0; i < element.length; i++) {
-        stampStack.push(loadImage("stamps/" + element[i].id + ".jpg"));
+        stampStack.push(loadImage("./stamps/" + element[i].id + ".jpg"));
         baseColorVectors.push(element[i].rgb);
-        baseIDs.push(i);
+        baseArray.push({ "stampID": i, "stampCounter": 0 });
     }
     stampColorVectors = JSON.parse(JSON.stringify(baseColorVectors));
-    stampIDs = JSON.parse(JSON.stringify(baseIDs));
+    stampArray = JSON.parse(JSON.stringify(baseArray));
     console.log(stampColorVectors[0]);
 
 }
@@ -35,8 +45,11 @@ function stampLoader(element) {
 
 
 function setup() {
+    webcamWidth = 1280;
+    webcamHeight = 720;
+
     photoSnapped = false;
-    still = createGraphics(window.innerWidth, window.innerHeight);
+    still = createGraphics(webcamWidth, webcamHeight);
     createCanvas(window.innerWidth, window.innerHeight);
     background(0);
     var density = displayDensity();
@@ -51,30 +64,35 @@ function setup() {
     console.log(density);
 
     capture = createCapture(VIDEO);
-    capture.size(320, 240);
+    capture.size(webcamWidth, webcamHeight);
     capture.hide();
 
     video = createCapture(VIDEO);
-    video.size(320, 240);
+    video.size(webcamWidth, webcamHeight);
     video.hide();
+    frameRate(30);
 }
 
 function draw() {
 
     if (photoSnapped) {
 
-        if (!(attempts > 100 || stampColorVectors.length < sampleArrayLength + 1)) {
+        if (!(attempts > 1000 || stampColorVectors.length < sampleArrayLength + 1)) {
             push();
             translate(width / 2, height / 2);
-            scale(-1, 1);
-            image(still, -width / 2, -height / 2, width, height);
+            scale(1, 1);
+            if (width > height * (webcamWidth / webcamHeight)) {
+                image(still, -width / 2, -width * (webcamHeight / webcamWidth) / 2, width, width * (webcamHeight / webcamWidth));
+            } else {
+                image(still, -height * (webcamWidth / webcamHeight) / 2, -height / 2, height * (webcamWidth / webcamHeight), height);
+            }
             pop();
             fill(255, 100);
             rect(0, 0, width, height);
         }
 
 
-        var total = 30;
+        var total = floor(stampSpeed);
         var count = 0;
         var attempts = 0;
 
@@ -85,7 +103,7 @@ function draw() {
                 count++;
             }
             attempts++;
-            if (attempts > 100 || stampColorVectors.length < sampleArrayLength + 1) {
+            if (attempts > 1000 || stampColorVectors.length < sampleArrayLength + 1) {
                 break;
             }
         }
@@ -121,15 +139,27 @@ function draw() {
         push();
         translate(width / 2, height / 2);
         scale(-1, 1);
-        image(video, -width / 2, -height / 2, width, height);
+        if (width > height * (webcamWidth / webcamHeight)) {
+            image(capture, -width / 2, -width * (webcamHeight / webcamWidth) / 2, width, width * (webcamHeight / webcamWidth));
+        } else {
+            image(capture, -height * (webcamWidth / webcamHeight) / 2, -height / 2, height * (webcamWidth / webcamHeight), height);
+        }
         pop();
     }
     textSize(20);
     strokeWeight(5);
     stroke(0);
     fill(255);
-    text("Variance: " + sampleArrayLength + ", Unique: " + keyIsDown(67) + ", Mode: " + mode, 30, height - 30);
-    text("Made by: Ali Tabatabai & Jesper Sam Sørensen, 2017", width - 510, height - 30);
+    textAlign(LEFT, BOTTOM);
+    text("Unique: " + floor(uniqueStamps) + "\nSize: " + floor(stampSize) + "\nJitter: " + sampleArrayLength, 20, height - 20);
+    text("Variance: " + floor(stampVariance) + "\nSpeed: " + floor(stampSpeed) + "\nMode: " + mode, 150, height - 20);
+    textAlign(RIGHT, BOTTOM);
+    text("Stamp My Selfie\nMade by: Ali Tabatabai\n& Jesper Sam Sørensen, 2017", width - 20, height - 20);
+
+
+
+
+    keyEntry();
 }
 
 function newCircle() {
@@ -140,13 +170,13 @@ function newCircle() {
     for (var i = 0; i < circles.length; i++) {
         var circle = circles[i];
         var d = dist(x, y, circle.x, circle.y);
-        if (d - 2 < circle.r) {
+        if (d - height / 500 * floor(stampSize) < circle.r) {
             valid = false;
             break;
         }
     }
     if (valid) {
-        var index = (int(map(x, 0, width, still.width, 0)) + int(map(y, 0, height, 0, still.height)) * still.width) * 4;
+        var index = (int(map(x, 0, width, 0, still.width)) + int(map(y, 0, height, 0, still.height)) * still.width) * 4;
         var r = still.pixels[index];
         var g = still.pixels[index + 1];
         var b = still.pixels[index + 2];
@@ -155,12 +185,16 @@ function newCircle() {
     } else {
         return null;
     }
+
+
+
+
 }
 
 function keyPressed() {
     if (keyCode === 32) {
         if (photoSnapped === false) {
-            still = capture.get();
+            still = video.get();
             still.loadPixels();
             photoSnapped = true;
 
@@ -168,7 +202,7 @@ function keyPressed() {
             saveCanvas("screendump", "jpg");
             photoSnapped = false;
             stampColorVectors = JSON.parse(JSON.stringify(baseColorVectors));
-            stampIDs = JSON.parse(JSON.stringify(baseIDs));
+            stampArray = JSON.parse(JSON.stringify(baseArray));
             circles = [];
         }
 
@@ -185,9 +219,63 @@ function keyPressed() {
         }
     }
 
-    if (keyCode === 86) {
+
+    if (keyCode === 67) {
         if (mode === "Stamps") {
             mode = "Circles";
         } else if (mode === "Circles") { mode = "None"; } else if (mode === "None") { mode = "Stamps"; }
     }
+    if (keyCode === 86) {
+        if (mode === "Stamps") {
+            mode = "None";
+        } else if (mode === "Circles") { mode = "Stamps"; } else if (mode === "None") { mode = "Circles"; }
+    }
 }
+
+
+function keyEntry() {
+    if (keyIsDown(81)) {
+        if (uniqueStamps > 1 + 1 / 3) {
+            uniqueStamps -= 1 / 3;
+        }
+    }
+    if (keyIsDown(87)) {
+        if (uniqueStamps < 100) {
+            uniqueStamps += 1 / 3;
+        }
+    }
+
+    if (keyIsDown(65)) {
+        if (stampSize > 1 + 1 / 3) {
+            stampSize -= 1 / 3;
+        }
+    }
+    if (keyIsDown(83)) {
+        if (stampSize < 100) {
+            stampSize += 1 / 3;
+        }
+    }
+
+    if (keyIsDown(69)) {
+        if (stampVariance > 1 + 1 / 3) {
+            stampVariance -= 1 / 3;
+        }
+    }
+    if (keyIsDown(82)) {
+        if (stampVariance < 100) {
+            stampVariance += 1 / 3;
+        }
+    }
+
+
+    if (keyIsDown(68)) {
+        if (stampSpeed > 1 + 1 / 3) {
+            stampSpeed -= 1 / 3;
+        }
+    }
+    if (keyIsDown(70)) {
+        if (stampSpeed < 100) {
+            stampSpeed += 1 / 3;
+        }
+    }
+};

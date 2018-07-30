@@ -1,7 +1,7 @@
 function Circle(x, y, color) {
     this.x = x;
     this.y = y;
-    this.r = 2;
+    this.r = height / 500 * floor(stampSize);
     this.color = color;
     console.log(stampColorVectors[0][0]);
     this.colorVector = [color.levels[0], color.levels[1], color.levels[2]];
@@ -28,12 +28,18 @@ function Circle(x, y, color) {
     }
 
     this.imageID = this.minDistArray[floor(random(0, sampleArrayLength))].imageID;
-    this.serial = stampIDs[this.imageID];
+    this.serial = stampArray[this.imageID].stampID;
+    stampArray[this.imageID].stampCounter++;
     this.image = stampStack[this.serial];
 
-    if (keyIsDown(67)) {
+    // if (keyIsDown(70)) {
+    //     stampColorVectors.splice(this.imageID, 1);
+    //     stampArray.splice(this.imageID, 1);
+    // }
+
+    if (stampArray[this.imageID].stampCounter > floor(uniqueStamps)) {
         stampColorVectors.splice(this.imageID, 1);
-        stampIDs.splice(this.imageID, 1);
+        stampArray.splice(this.imageID, 1);
     }
 
 
@@ -46,9 +52,9 @@ function Circle(x, y, color) {
 
     this.grow = function() {
         if (this.growing) {
-            this.r += height / 250;
+            this.r += height / 2500 * floor(stampSpeed);
         }
-        if (this.r > height / 40) {
+        if (this.r > height / 500 * floor(stampSize) * floor(stampVariance)) {
             this.growing = false;
         }
     }
