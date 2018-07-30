@@ -151,8 +151,11 @@ function draw() {
     stroke(0);
     fill(255);
     textAlign(LEFT, BOTTOM);
-    text("Unique: " + floor(uniqueStamps) + "\nSize: " + floor(stampSize) + "\nJitter: " + sampleArrayLength, 20, height - 20);
-    text("Variance: " + floor(stampVariance) + "\nSpeed: " + floor(stampSpeed) + "\nMode: " + mode, 150, height - 20);
+    text("Press (keys) to change values", 20, height - 100);
+    text("(Q-W)  Unique: " + floor(uniqueStamps) + "\n(A-S)  Size: " + floor(stampSize) + "\n(Z-X)  Jitter: " + sampleArrayLength, 20, height - 20);
+    text("(E-R)  Variance: " + floor(stampVariance) + "\n(D-F)  Speed: " + floor(stampSpeed) + "\n(C-V)  Mode: " + mode, 220, height - 20);
+    textAlign(CENTER, BOTTOM);
+    text("Press SPACE to Start the process\nPress SPACE again to stop\nand download the result", width / 2, height - 20);
     textAlign(RIGHT, BOTTOM);
     text("Stamp My Selfie\nMade by: Ali Tabatabai\n& Jesper Sam Sørensen, 2017", width - 20, height - 20);
 
