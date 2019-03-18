@@ -10,7 +10,7 @@
 ehthumbs.db
 Thumbs.db
 
-node_modules
+
 bower_components
 trash
 Error.log
